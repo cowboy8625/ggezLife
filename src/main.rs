@@ -128,7 +128,7 @@ fn main() -> GameResult {
 
     let (mut ctx, mut event_loop) = ggez::ContextBuilder::new("life", "Cowboy8625")
         .window_setup(ggez::conf::WindowSetup::default().title("Game Of Life"))
-        .window_mode(ggez::conf::WindowMode::default().dimensions(1400.0, 800.0))
+        .window_mode(ggez::conf::WindowMode::default().dimensions(WINDOW.x as f32, WINDOW.y as f32))
         .build().expect("Failed to build ggez context");
 
     let state = &mut GameState::new();
@@ -138,18 +138,23 @@ fn main() -> GameResult {
 }
 
 fn display_board(ctx: &mut Context, cells: &Grid, grid: i32) -> GameResult {
+    let mut meshbuilder = graphics::MeshBuilder::new();
+    let mut count = 0;
     for y in 0..cells.height {
         for x in 0..cells.width {
-            let color = if cells[y][x] { [0.0, 0.0, 0.0, 1.0] } else { [1.0, 1.0, 1.0, 1.0] };
-            let mesh = graphics::MeshBuilder::new()
-                .rectangle(
-                    graphics::DrawMode::fill(),
-                    graphics::Rect::new_i32(x as i32 * grid, y as i32 * grid, grid, grid),
-                    color.into(),
-                )
-                .build(ctx)?;
-            graphics::draw(ctx, &mesh, graphics::DrawParam::default())?;
+            if cells[y][x] {
+                meshbuilder.rectangle(
+                        graphics::DrawMode::fill(),
+                        graphics::Rect::new_i32(x as i32 * grid, y as i32 * grid, grid, grid),
+                        [0.0, 0.0, 0.0, 1.0].into(),
+                    );
+                count += 1;
+            }
         }
+    }
+    if count > 0 {
+        let mesh = meshbuilder.build(ctx)?;
+        graphics::draw(ctx, &mesh, graphics::DrawParam::default())?;
     }
     Ok(())
 }
@@ -159,9 +164,7 @@ fn alive(x: i32, y: i32, v: &Grid) -> bool {
     let n = cell_count(x as usize, y as usize, v);
     let curr = v[y as usize][x as usize] as i32;
 
-    match (curr,  n) {
-        (1, 0..=1) => false,
-        (1, 4..=8) => false,
+    match (curr,  n) { (1, 0..=1) => false, (1, 4..=8) => false,
         (1, 2..=3) => true,
         (0, 3)     => true,
         (0, 0..=2) => false,
